@@ -9,12 +9,12 @@ static __global__ void applyJointBilateral(float* dst, float sigma_color, float 
   const int v_ = blockIdx.y * blockDim.y + threadIdx.y;
   const int i  = u_ + v_*cols;
   
-  if(u_ < radius || cols-radius <= u_ || v_ < radius || rows-radius <= v_){
-    dst[i] = 0.0;
-  }
-  else{
-    // const float4 p = tex2D(jointTex, u_+0.5, v_+0.5);
-    const float p_dash = tex2D(srcTex, u_+0.5, v_+0.5);
+  // if(u_ < radius || cols-radius <= u_ || v_ < radius || rows-radius <= v_){
+  //   dst[i] = 0.0;
+  // }
+  // else{
+    const float4 p = tex2D(jointTex, u_+0.5, v_+0.5);
+    // const float p_dash = tex2D(srcTex, u_+0.5, v_+0.5);
               
     float sum = 0.0;
     float sumw = 0.0;
@@ -23,15 +23,14 @@ static __global__ void applyJointBilateral(float* dst, float sigma_color, float 
     for(int uu = -radius; uu <= radius; uu++){
         for(int vv = -radius; vv <= radius; vv++){
               const float w_spatial = __expf(-(uu*uu + vv*vv) / den_spatial);
-              // const float4 q = tex2D(jointTex, u_+uu+0.5, v_+vv+0.5);
+              const float4 q = tex2D(jointTex, u_+uu+0.5, v_+vv+0.5);
               // const float id = (fabsf(p.x-q.x) + fabsf(p.y-q.y) + fabsf(p.z-q.z))/3.0;
-              // const float id = fabsf(p.x-q.x);
-              const float src_depth = tex2D(srcTex, u_+uu+0.5, v_+vv+0.5);
-              const float id = fabsf(p_dash-src_depth);
+              const float id = __fsqrt_rn((p.x-q.x)*(p.x-q.x) + (p.y-q.y)*(p.y-q.y) + (p.z-q.z)*(p.z-q.z));
+              // const float src_depth = tex2D(srcTex, u_+uu+0.5, v_+vv+0.5);
+              // const float id = fabsf(p_dash-src_depth);
               const float w_color = __expf(-(id*id) / den_color);
               const float w = w_spatial * w_color;
-              // const float src_depth = tex2D(srcTex, u_+uu+0.5, v_+vv+0.5);
-              // const float src_depth = src[i];
+              const float src_depth = tex2D(srcTex, u_+uu+0.5, v_+vv+0.5);// const float src_depth = src[i];
               sum += w * src_depth;
               sumw += w;
         }
@@ -39,7 +38,7 @@ static __global__ void applyJointBilateral(float* dst, float sigma_color, float 
     dst[i] = sum / sumw;
     // const float src_depth = tex2D(srcTex, u_+0.5, v_+0.5);
     // dst[i] = src_depth;
-  }
+  // }
   // const float4 p = tex2D(jointTex, u_+0.5, v_+0.5);
   // dst[i] = (p.x+p.y+p.z)/3.0;    
 }

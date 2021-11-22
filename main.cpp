@@ -51,8 +51,12 @@ int main (int argc, char* argv[])
 	CV_Assert(joint.type() == CV_8UC3);
 	cv::Mat dst;
 	dst.create(src.rows, src.cols, CV_32FC1);
-	float sigma_color = 1.0, sigma_spatial = 2.0;// 2/255
-	
+	float sigma_color = 2.0f/255.0f, sigma_spatial = 60.0;// 2/255
+
+	// std::cout << "sigma_color, 2.0f/255.0f: " << 2.0f/255.0f << 
+	// 	", 2.0/255.0: " << 2.0/255.0 << ", 2/255: " << 2/255 <<std::endl;
+	// sigma_color = 0.0;
+
 	int d = -1, radius;
 	const int rows = src.rows, cols = src.cols;
 	if(d < 0) {
@@ -62,26 +66,33 @@ int main (int argc, char* argv[])
 		d = radius*2 + 1;
 		// https://github.com/norishigefukushima/WeightedJointBilateralFilter/blob/master/DepthMapRefinement/jointBilateralFilter.cpp
 	}
-	// cv::ximgproc::jointBilateralFilter(joint, src, dst, d, sigma_color, sigma_spatial);
-	
-	cv::cuda::GpuMat src_gpu, dst_gpu, joint_gpu;
-	cv::cuda::createContinuous(rows, cols, CV_32FC1, src_gpu);
-	cv::cuda::createContinuous(rows, cols, CV_32FC1, dst_gpu);
-	cv::cuda::createContinuous(rows, cols, CV_32FC4, joint_gpu);
-	src.convertTo(src, CV_32FC1);// 8UC1 -> 32FC1
-	src_gpu.upload(src);
-	dst_gpu.upload(dst);
-	joint.convertTo(joint, CV_32FC3);// CV_8UC3 -> CV_32FC3
-	cvtColor(joint, joint, CV_BGR2BGRA);// CV_32FC3 -> CV_32FC4 
-	joint_gpu.upload(joint);
-	applyJointBilateralCaller((float*)src_gpu.data, (float*)dst_gpu.data, (float4*)joint_gpu.data, rows, cols, src_gpu.step, joint_gpu.step,
-  		sigma_color, sigma_spatial, radius);
-	dst_gpu.download(dst);
 
-	
+	std::string savename;
+	bool gpu = true;
+	if(gpu){
+		cv::cuda::GpuMat src_gpu, dst_gpu, joint_gpu;
+		cv::cuda::createContinuous(rows, cols, CV_32FC1, src_gpu);
+		cv::cuda::createContinuous(rows, cols, CV_32FC1, dst_gpu);
+		cv::cuda::createContinuous(rows, cols, CV_32FC4, joint_gpu);
+		src.convertTo(src, CV_32FC1);// 8UC1 -> 32FC1
+		src_gpu.upload(src);
+		dst_gpu.upload(dst);
+		joint.convertTo(joint, CV_32FC3);// CV_8UC3 -> CV_32FC3
+		cvtColor(joint, joint, CV_BGR2BGRA);// CV_32FC3 -> CV_32FC4 
+		joint_gpu.upload(joint);
+		applyJointBilateralCaller((float*)src_gpu.data, (float*)dst_gpu.data, (float4*)joint_gpu.data, rows, cols, src_gpu.step, joint_gpu.step,
+	  		sigma_color, sigma_spatial, radius);
+		dst_gpu.download(dst);
+		savename = "joint_bilateral_filter_gpu.png";
+	}
+	else{
+		cv::ximgproc::jointBilateralFilter(joint, src, dst, d, sigma_color, sigma_spatial);
+		savename = "joint_bilateral_filter_cpu.png";
+	}
+
 	cv::Mat visu;
 	cv::normalize(dst, visu, 0, 255, CV_MINMAX, CV_8U);
-	cv::imwrite("joint_filter_cpu.png", visu);
+	cv::imwrite(savename, visu);
 	
 	return 0;
 }
