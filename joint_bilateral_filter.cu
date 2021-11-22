@@ -13,9 +13,7 @@ static __global__ void applyJointBilateral(float* dst, float sigma_color, float 
   //   dst[i] = 0.0;
   // }
   // else{
-    const float4 p = tex2D(jointTex, u_+0.5, v_+0.5);
-    // const float p_dash = tex2D(srcTex, u_+0.5, v_+0.5);
-              
+    const float4 p = tex2D(jointTex, u_+0.5, v_+0.5);              
     float sum = 0.0;
     float sumw = 0.0;
     const float den_spatial = 2*sigma_spatial*sigma_spatial;
@@ -26,8 +24,6 @@ static __global__ void applyJointBilateral(float* dst, float sigma_color, float 
               const float4 q = tex2D(jointTex, u_+uu+0.5, v_+vv+0.5);
               // const float id = (fabsf(p.x-q.x) + fabsf(p.y-q.y) + fabsf(p.z-q.z))/3.0;
               const float id = __fsqrt_rn((p.x-q.x)*(p.x-q.x) + (p.y-q.y)*(p.y-q.y) + (p.z-q.z)*(p.z-q.z));
-              // const float src_depth = tex2D(srcTex, u_+uu+0.5, v_+vv+0.5);
-              // const float id = fabsf(p_dash-src_depth);
               const float w_color = __expf(-(id*id) / den_color);
               const float w = w_spatial * w_color;
               const float src_depth = tex2D(srcTex, u_+uu+0.5, v_+vv+0.5);// const float src_depth = src[i];
@@ -36,11 +32,7 @@ static __global__ void applyJointBilateral(float* dst, float sigma_color, float 
         }
      }
     dst[i] = sum / sumw;
-    // const float src_depth = tex2D(srcTex, u_+0.5, v_+0.5);
-    // dst[i] = src_depth;
   // }
-  // const float4 p = tex2D(jointTex, u_+0.5, v_+0.5);
-  // dst[i] = (p.x+p.y+p.z)/3.0;    
 }
 
 

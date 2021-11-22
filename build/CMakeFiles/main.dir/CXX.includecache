@@ -19,6 +19,8 @@ opencv2/opencv.hpp
 -
 opencv2/ximgproc/edge_filter.hpp
 -
+chrono
+-
 joint_bilateral_filter.cuh
 /opt/jointBilateralFilter/joint_bilateral_filter.cuh
 

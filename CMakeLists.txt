@@ -41,5 +41,3 @@ message(WARNING "install path ${OpenCV_INSTALL_PATH}")
 message(WARNING "config path ${OpenCV_CONFIG_PATH}") # look at the output of this message
 message(WARNING "libs ${OpenCV_LIBS}")
 message(WARNING "include dirs ${OpenCV_INCLUDE_DIRS}")
-
-
