@@ -3,7 +3,7 @@
 static texture<float4, cudaTextureType2D, cudaReadModeElementType> jointTex;
 static texture<float, cudaTextureType2D, cudaReadModeElementType> srcTex;
 
-static __global__ void applyJointBilateral(float* dst, float sigma_color, float sigma_spatial, int radius, int rows, int cols)
+static __global__ void applyJointBilateral(float* dst, float sigma_color2_inv_half, float sigma_spatial2_inv_half, int radius, int rows, int cols)
 {
   const int u_ = blockIdx.x * blockDim.x + threadIdx.x;
   const int v_ = blockIdx.y * blockDim.y + threadIdx.y;
@@ -16,15 +16,13 @@ static __global__ void applyJointBilateral(float* dst, float sigma_color, float 
     const float4 p = tex2D(jointTex, u_+0.5, v_+0.5);              
     float sum = 0.0;
     float sumw = 0.0;
-    const float den_spatial = 2*sigma_spatial*sigma_spatial;
-    const float den_color = 2*sigma_color*sigma_color; 
     for(int uu = -radius; uu <= radius; uu++){
         for(int vv = -radius; vv <= radius; vv++){
-              const float w_spatial = __expf(-(uu*uu + vv*vv) / den_spatial);
+              const float w_spatial = __expf((uu*uu + vv*vv)*sigma_spatial2_inv_half);
               const float4 q = tex2D(jointTex, u_+uu+0.5, v_+vv+0.5);
               // const float id = (fabsf(p.x-q.x) + fabsf(p.y-q.y) + fabsf(p.z-q.z))/3.0;
               const float id = __fsqrt_rn((p.x-q.x)*(p.x-q.x) + (p.y-q.y)*(p.y-q.y) + (p.z-q.z)*(p.z-q.z));
-              const float w_color = __expf(-(id*id) / den_color);
+              const float w_color = __expf((id*id)*sigma_color2_inv_half);
               const float w = w_spatial * w_color;
               const float src_depth = tex2D(srcTex, u_+uu+0.5, v_+vv+0.5);// const float src_depth = src[i];
               sum += w * src_depth;
@@ -61,7 +59,9 @@ void applyJointBilateralCaller(float*src, float* dst, float4* joint, int rows, i
   CV_CUDEV_SAFE_CALL(cudaGetLastError());
   CV_CUDEV_SAFE_CALL(cudaDeviceSynchronize());
 
-  applyJointBilateral<<<dimGrid, dimBlock>>>(dst, sigma_color, sigma_spatial, radius, rows, cols);
+  float sigma_spatial2_inv_half = -0.5f/(sigma_spatial * sigma_spatial);
+  float sigma_color2_inv_half = -0.5f/(sigma_color * sigma_color);
+  applyJointBilateral<<<dimGrid, dimBlock>>>(dst, sigma_color2_inv_half, sigma_spatial2_inv_half, radius, rows, cols);
 
   CV_CUDEV_SAFE_CALL(cudaGetLastError());
   CV_CUDEV_SAFE_CALL(cudaDeviceSynchronize());

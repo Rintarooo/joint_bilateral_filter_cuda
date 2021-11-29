@@ -15,7 +15,7 @@ int main (int argc, char* argv[])
 	const std::string joint_gpu = "joint_bilateral_filter_gpu",
 							joint_cpu = "joint_bilateral_filter_cpu",
 							bilateral_gpu = "bilateral_filter_gpu";
-	const std::string	filter_type = bilateral_gpu;
+	const std::string	filter_type = joint_gpu;
 
 
 	cv::Mat src, joint;
