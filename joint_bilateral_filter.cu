@@ -18,12 +18,13 @@ static __global__ void applyJointBilateral(float* dst, float sigma_color2_inv_ha
     float sumw = 0.0;
     for(int uu = -radius; uu <= radius; uu++){
         for(int vv = -radius; vv <= radius; vv++){
-              const float w_spatial = __expf((uu*uu + vv*vv)*sigma_spatial2_inv_half);
+              // const float w_spatial = __expf((uu*uu + vv*vv)*sigma_spatial2_inv_half);
               const float4 q = tex2D(jointTex, u_+uu+0.5, v_+vv+0.5);
               // const float id = (fabsf(p.x-q.x) + fabsf(p.y-q.y) + fabsf(p.z-q.z))/3.0;
               const float id = __fsqrt_rn((p.x-q.x)*(p.x-q.x) + (p.y-q.y)*(p.y-q.y) + (p.z-q.z)*(p.z-q.z));
-              const float w_color = __expf((id*id)*sigma_color2_inv_half);
-              const float w = w_spatial * w_color;
+              // const float w_color = __expf((id*id)*sigma_color2_inv_half);
+              // const float w = w_spatial * w_color;
+              const float w = __expf((uu*uu + vv*vv)*sigma_spatial2_inv_half + (id*id)*sigma_color2_inv_half);
               const float src_depth = tex2D(srcTex, u_+uu+0.5, v_+vv+0.5);// const float src_depth = src[i];
               sum += w * src_depth;
               sumw += w;
