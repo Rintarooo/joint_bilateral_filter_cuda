@@ -12,6 +12,11 @@ int main (int argc, char* argv[])
 	// 	std::cerr << "argc: " << argc << "should be 2\n";
 	// 	return 1;
 	// }	
+	const std::string joint_gpu = "joint_bilateral_filter_gpu",
+							joint_cpu = "joint_bilateral_filter_cpu",
+							bilateral_gpu = "bilateral_filter_gpu";
+	const std::string	filter_type = bilateral_gpu;
+
 
 	cv::Mat src, joint;
 	try {
@@ -71,9 +76,8 @@ int main (int argc, char* argv[])
    start = std::chrono::system_clock::now(); // 計測開始時間
     
 	std::string savename;
-	bool gpu = true;
-	if(gpu){
-		std::cout << "gpu" << std::endl;
+	if(filter_type == joint_gpu){
+		std::cout << joint_gpu << std::endl;
 		cv::cuda::GpuMat src_gpu, dst_gpu, joint_gpu;
 		cv::cuda::createContinuous(rows, cols, CV_32FC1, src_gpu);
 		cv::cuda::createContinuous(rows, cols, CV_32FC1, dst_gpu);
@@ -89,11 +93,25 @@ int main (int argc, char* argv[])
 		dst_gpu.download(dst);
 		savename = "output/joint_bilateral_filter_gpu.png";
 	}
-	else{
-		std::cout << "cpu" << std::endl;
+	else if(filter_type == joint_cpu){
+		std::cout << joint_cpu << std::endl;
 		cv::ximgproc::jointBilateralFilter(joint, src, dst, d, sigma_color, sigma_spatial);
 		savename = "output/joint_bilateral_filter_cpu.png";
 	}
+	else if(filter_type == bilateral_gpu){
+		std::cout << bilateral_gpu << std::endl;
+		cv::cuda::GpuMat src_gpu, dst_gpu, joint_gpu;
+		cv::cuda::createContinuous(rows, cols, CV_32FC1, src_gpu);
+		cv::cuda::createContinuous(rows, cols, CV_32FC1, dst_gpu);
+		src.convertTo(src, CV_32FC1);// 8UC1 -> 32FC1
+		src_gpu.upload(src);
+		dst_gpu.upload(dst);
+		const int kernel_size = radius;
+		cv::cuda::bilateralFilter(src_gpu, dst_gpu, kernel_size, sigma_color, sigma_spatial);
+		dst_gpu.download(dst);
+		savename = "output/bilateral_filter_gpu.png";
+	}
+	else std::cerr << "filter_type not found: " << filter_type << std::endl; 
 
 	end = std::chrono::system_clock::now();  // 計測終了時間
    double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換 

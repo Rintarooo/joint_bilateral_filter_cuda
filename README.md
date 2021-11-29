@@ -19,9 +19,12 @@ radius = sigma_spatial*1.5 = 90
 
 outputs
 ```bash
-cpu
+joint_bilateral_filter_cpu
 elapsed time(milliseconds): 2466
 
-gpu
+joint_bilateral_filter_gpu
 elapsed time(milliseconds): 17502
+
+bilateral_filter_gpu
+elapsed time(milliseconds): 224
 ```
